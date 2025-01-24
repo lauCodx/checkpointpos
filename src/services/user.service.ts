@@ -4,16 +4,26 @@ import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken'
 
 export class UserService {
+    async findUserByEmail(email: string): Promise<User | null> {
+        const userRef = db.collection('Users').doc(email.toLowerCase());
+        const doc = await userRef.get();
+        if (doc.exists) {
+            throw new Error('User already exist');
+        }
+        return doc.data() as User;
+    };
+
     async create(user: User): Promise<User> {
         const email = user.email;
         const password = user.password;
         try {
-            const userExist = await db.collection('Users').doc(email).get();
+            const userRef = db.collection('Users').doc(email.toLowerCase())
+            const userExist = await userRef.get();
             if (userExist.exists) {
-                throw new Error('User already exists')
+                throw new Error('User already exists');
             };
             const hashPassword = await bcrypt.hash(password, 10);
-            await db.collection('Users').add({...user, password:hashPassword});
+            await userRef.set({...user, password:hashPassword});
             return user
             
         } catch (error) {
@@ -25,7 +35,7 @@ export class UserService {
         const email = user.email;
         const password = user.password;
         try {
-            const userExist = await db.collection('Users').doc(email).get();
+            const userExist = await db.collection('Users').doc(email.toLowerCase()).get();
             if (!userExist.exists) {
                 throw new Error('User does not exist')
             };
