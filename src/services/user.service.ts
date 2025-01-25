@@ -36,10 +36,10 @@ export class UserService {
         const password = user.password;
         try {
             const userExist = await db.collection('Users').doc(email.toLowerCase()).get();
-            
+
             const userData = userExist.data();
             if (!userData) {
-                throw new Error('User data is undefined');
+                throw new Error('User data does not exist');
             }
             const checkPassword = await bcrypt.compare(password, userData.password);
             if (!checkPassword){
