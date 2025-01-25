@@ -36,10 +36,7 @@ export class UserService {
         const password = user.password;
         try {
             const userExist = await db.collection('Users').doc(email.toLowerCase()).get();
-            if (!userExist.exists) {
-                throw new Error('User does not exist')
-            };
-
+            
             const userData = userExist.data();
             if (!userData) {
                 throw new Error('User data is undefined');
