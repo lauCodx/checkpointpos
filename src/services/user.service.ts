@@ -1,30 +1,32 @@
-import { db } from "../config/db.config";
+import admin, { db } from "../config/db.config";
 import { SigninUserInterface, User } from "../interfaces/user.signin.interface";
 import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken'
 
-export class UserService {
-    async findUserByEmail(email: string): Promise<User | null> {
-        const userRef = db.collection('Users').doc(email.toLowerCase());
-        const doc = await userRef.get();
-        if (doc.exists) {
-            throw new Error('User already exist');
-        }
-        return doc.data() as User;
-    };
+const Admin = admin.auth()
 
-    async create(user: User): Promise<User> {
+export class UserService {
+
+    async create(user: User): Promise<User | any> {
         const email = user.email;
         const password = user.password;
         try {
-            const userRef = db.collection('Users').doc(email.toLowerCase())
-            const userExist = await userRef.get();
-            if (userExist.exists) {
+            
+            const existingUser = await Admin.getUserByEmail(email).catch(() => null);
+            if (existingUser){
                 throw new Error('User already exists');
-            };
+            }
             const hashPassword = await bcrypt.hash(password, 10);
-            await userRef.set({...user, password:hashPassword});
-            return user
+            const newUser = await Admin.createUser({
+                ...user,
+                password: hashPassword
+            })
+            await db.collection('Users').doc(newUser.uid).set({
+                uid: newUser.uid,
+                ...user
+            })
+
+            return newUser
             
         } catch (error) {
             throw error
