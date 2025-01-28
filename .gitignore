@@ -1,5 +1,5 @@
 node_modules
 .env 
 keys.json
-keys2.json
+key.json
 ./build
