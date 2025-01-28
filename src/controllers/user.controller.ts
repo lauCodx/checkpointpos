@@ -26,7 +26,7 @@ export class UserController {
     }
 
     async signIn(req: Request, res: Response, next: NextFunction): Promise<void> {
-        const user = req.body;
+        const user: User = req.body;
         try {
             if (!user.email || !user.password){
                 throw new Error('Email and password are required')
