@@ -33,7 +33,7 @@ export class UserService {
         }
     };
 
-    async signIn(user: SigninUserInterface): Promise<string> {
+    async signIn(user: SigninUserInterface): Promise<any> {
         const email = user.email;
         const password = user.password;
         try {
@@ -45,9 +45,24 @@ export class UserService {
             const signInUrl = `https://identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key=${FIREBASE_API_KEY}`;
 
             const {data} = await axios.post(signInUrl, {email, password, returnSecureToken: true});
+            const signedInUser = await Admin.getUser(data.localId);
 
-            return data.idToken;
+            return {
+                token: data.idToken,
+                refreshToken: data.refreshToken,
+                user: {
+                    uid: signedInUser.uid,
+                    email: signedInUser.email,
+                    emailVerified: signedInUser.emailVerified,
+                    createdAt: signedInUser.metadata.creationTime,
+                    lastSignInTime: signedInUser.metadata.lastSignInTime,
+                },
+            };
+
         } catch (error) {
+            if (axios.isAxiosError(error)) {
+                console.error("Firebase Sign-in Error:", error.response?.data || error.message);
+            } 
             throw error
         }
     }

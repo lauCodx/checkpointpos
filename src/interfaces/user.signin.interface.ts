@@ -3,6 +3,7 @@ import { Request } from "express";
 export interface SigninUserInterface{
     email: string;
     password: string;
+    role?: string;
 }
 
 export interface User{
