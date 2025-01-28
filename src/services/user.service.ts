@@ -1,9 +1,10 @@
 import admin, { db } from "../config/db.config";
 import { SigninUserInterface, User } from "../interfaces/user.signin.interface";
 import bcrypt from 'bcrypt';
-import jwt from 'jsonwebtoken'
+import axios from 'axios';
 
 const Admin = admin.auth()
+const FIREBASE_API_KEY = process.env.FIREBASE_API_KEY
 
 export class UserService {
 
@@ -11,7 +12,6 @@ export class UserService {
         const email = user.email;
         const password = user.password;
         try {
-            
             const existingUser = await Admin.getUserByEmail(email).catch(() => null);
             if (existingUser){
                 throw new Error('User already exists');
@@ -37,25 +37,16 @@ export class UserService {
         const email = user.email;
         const password = user.password;
         try {
-            const userExist = await db.collection('Users').doc(email.toLowerCase()).get();
-
-            const userData = userExist.data();
-            if (!userData) {
-                throw new Error('User data does not exist');
+            const existingUser = await Admin.getUserByEmail(email).catch(() => null);
+            if (!existingUser){
+                throw new Error('User does not exist');
             }
-            const checkPassword = await bcrypt.compare(password, userData.password);
-            if (!checkPassword){
-                throw new Error('Invalid credentials')
-            }
-            
-            const token = jwt.sign(
-                {id: userData.id, email: userData.email, role: userData.role}, 
-                process.env.JWT_SECRET as string, 
-                {expiresIn: '1h'}
-            );
 
-            return token
+            const signInUrl = `https://identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key=${FIREBASE_API_KEY}`;
 
+            const {data} = await axios.post(signInUrl, {email, password, returnSecureToken: true});
+
+            return data.idToken;
         } catch (error) {
             throw error
         }
